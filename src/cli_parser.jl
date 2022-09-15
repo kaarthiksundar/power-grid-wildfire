@@ -10,6 +10,10 @@ function parse_cli_args()
             help = "preventive/corrective"
             arg_type = String 
             default = "preventive"
+        "--switch_budget", "-b"
+            help = "number of lines that can be turned off in the topology control problem"
+            arg_type = Int 
+            default = 5
     end
 
     return parse_args(s)

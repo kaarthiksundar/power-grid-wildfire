@@ -19,3 +19,9 @@ function parse_case_data(file)
     PowerModels.calc_thermal_limits!(data)
     return data
 end 
+
+function get_ref(data)
+    ref = PowerModels.build_ref(data)
+    PowerModels.ref_add_on_off_va_bounds!(ref, data)
+    return ref[:it][:pm][:nw][0]
+end 
