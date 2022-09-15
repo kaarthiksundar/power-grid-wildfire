@@ -4,7 +4,6 @@ function create_topology_control_model(ref; budget::Int = 5)::OptModel
     var = opt_model.var 
     extra = opt_model.extra
 
-
     # topology variables for the lines 
     z_branch = var[:z_branch] = JuMP.@variable(m, [l in keys(ref[:branch])], binary = true)
 
