@@ -7,7 +7,7 @@ function parse_cli_args()
             arg_type = String 
             default = "./data/RTS_GMLC.m"
         "--model", "-m"
-            help = "preventive/corrective"
+            help = "topology/preventive/corrective"
             arg_type = String 
             default = "preventive"
         "--switch_budget", "-b"
