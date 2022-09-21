@@ -3,6 +3,7 @@ using ArgParse
 using PowerModels
 using JuMP
 using CPLEX 
+using StatsBase
 using StochasticPrograms
 
 PowerModels.silence()
@@ -12,6 +13,7 @@ milp_optimizer = JuMP.optimizer_with_attributes(CPLEX.Optimizer, "CPXPARAM_Scree
 include("cli_parser.jl")
 include("data_parser.jl")
 include("types.jl")
+include("scenario_generation.jl")
 include("topology_control.jl")
 include("preventive.jl")
 
