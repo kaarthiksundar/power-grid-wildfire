@@ -1,20 +1,21 @@
 function create_preventive_model(ref; budget::Int = 5, 
     num_scenarios::Int = 10, 
     ramping_scaling::Float64 = 1.0, 
-    load_shed_scaling::Float64 = 1.0)
+    load_shed_scaling::Float64 = 1.0, 
+    decomposition_type = ScenarioDecomposition())
 
     scenarios = generate_scenarios(ref, num_scenarios)
     add_costs(ref, ramping_scaling, load_shed_scaling)
     var = Dict{Symbol,Any}()
     extra = Dict{Symbol,Any}()
 
-    sp = StochasticProgram(scenarios, ScenarioDecomposition())
+    sp = StochasticProgram(scenarios, decomposition_type)
 
     @first_stage sp = begin 
         var[:z_branch] = @decision(sp, z_branch[l in keys(ref[:branch])], binary = true)
         var[:pg] = @decision(sp, 
             pg[i in keys(ref[:gen])], 
-            lower_bound = ref[:gen][i]["pmin"], 
+            lower_bound = 0.0, 
             upper_bound = ref[:gen][i]["pmax"]
         )
         var[:va] = @decision(sp, va[i in keys(ref[:bus])])
@@ -103,9 +104,7 @@ function create_preventive_model(ref; budget::Int = 5,
         @uncertain ξ[(l,i,j) in ref[:arcs_from]] 
 
         var[:ramp_g_scenario] = @recourse(sp, 
-            ramp_g_scenario[i in keys(ref[:gen])], 
-            lower_bound = ref[:gen][i]["pmin"], 
-            upper_bound = ref[:gen][i]["pmax"]
+            ramp_g_scenario[i in keys(ref[:gen])]
         )
         var[:ramp_g_plus_scenario] = @recourse(sp, 
             ramp_g_plus_scenario[i in keys(ref[:gen])], 
@@ -115,7 +114,7 @@ function create_preventive_model(ref; budget::Int = 5,
         var[:ramp_g_minus_scenario] = @recourse(sp, 
             ramp_g_minus_scenario[i in keys(ref[:gen])], 
             lower_bound = 0.0,
-            upper_bound = ref[:gen][i]["pmin"]
+            upper_bound = ref[:gen][i]["pmax"]
         )
         var[:load_scenario] = @recourse(sp, 
             load_scenario[i in keys(ref[:load])], 
@@ -152,8 +151,10 @@ function create_preventive_model(ref; budget::Int = 5,
             @constraint(sp, va_scenario[i] == 0)
         end
 
-        for (i, _) in ref[:gen]
+        for (i, gen) in ref[:gen]
             @constraint(sp, ramp_g_scenario[i] == ramp_g_plus_scenario[i] - ramp_g_minus_scenario[i])
+            @constraint(sp, pg[i] - ramp_g_minus_scenario[i] >= gen["pmin"])
+            @constraint(sp, pg[i] + ramp_g_plus_scenario[i] <= gen["pmax"])
         end     
 
         for (i, _) in ref[:bus]
@@ -196,8 +197,8 @@ function create_preventive_model(ref; budget::Int = 5,
             angmin = branch["angmin"]
             angmax = branch["angmax"]
     
-            @constraint(sp, va_fr - va_to <= angmax*z + vad_max * (1 - z * (1 - ξ[f_idx])))
-            @constraint(sp, va_fr - va_to >= angmin*z + vad_min * (1 - z * (1 - ξ[f_idx])))
+            @constraint(sp, va_fr - va_to <= angmax * z * (1 - ξ[f_idx]) + vad_max * (1 - z * (1 - ξ[f_idx])))
+            @constraint(sp, va_fr - va_to >= angmin * z * (1 - ξ[f_idx]) + vad_min * (1 - z * (1 - ξ[f_idx])))
     
             rate_a = branch["rate_a"]
             
@@ -207,6 +208,25 @@ function create_preventive_model(ref; budget::Int = 5,
     end 
 
     return (model = sp, scenarios = scenarios, var = var, extra = extra)
+end 
+
+function solve_preventive_control_model(model, optimizer, method)
+    if method == :pg 
+        set_optimizer(model, ProgressiveHedging.Optimizer)
+        set_optimizer_attribute(model, Penalizer(), Adaptive())
+        set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
+        optimize!(model)
+    end 
+
+    if method == :LShaped 
+        set_optimizer(model, LShaped.Optimizer)
+        set_optimizer_attribute(model, MasterOptimizer(), optimizer) 
+        set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
+        set_optimizer_attribute(model, FeasibilityStrategy(), FeasibilityCuts())
+        # set_optimizer_attribute(model, Regularizer(), TR()) # Set regularization to trust-region
+        # set_optimizer_attribute(model, Aggregator(), PartialAggregate(36))
+        optimize!(model)
+    end 
 end 
 
 # function solve_topology_control_model(opt_model::OptModel, optimizer)
