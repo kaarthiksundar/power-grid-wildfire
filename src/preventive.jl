@@ -1,4 +1,5 @@
 function create_preventive_model(ref; budget::Int = 5, 
+    load_factor::Float64 = 1.0,
     num_scenarios::Int = 10, 
     ramping_scaling::Float64 = 1.0, 
     load_shed_scaling::Float64 = 1.0, 
@@ -55,7 +56,7 @@ function create_preventive_model(ref; budget::Int = 5,
                 sum(p_expr[a] for a in ref[:bus_arcs][i]) +             # sum of active power flow on lines from bus i +
                 sum(p_dc[a_dc] for a_dc in ref[:bus_arcs_dc][i]) ==     # sum of active power flow on HVDC lines from bus i =
                 sum(pg[g] for g in ref[:bus_gens][i]) -                 # sum of active power generation at bus i -
-                sum(load["pd"] for load in bus_loads) -                 # sum of active load consumption at bus i -
+                load_factor * sum(load["pd"] for load in bus_loads) -                 # sum of active load consumption at bus i -
                 sum(shunt["gs"] for shunt in bus_shunts)*1.0^2          # sum of active shunt element injections at bus i
             )
         end
@@ -119,7 +120,7 @@ function create_preventive_model(ref; budget::Int = 5,
         var[:load_scenario] = @recourse(sp, 
             load_scenario[i in keys(ref[:load])], 
             lower_bound = 0.0, 
-            upper_bound = ref[:load][i]["pd"]    
+            upper_bound = load_factor * ref[:load][i]["pd"]    
         )
         var[:va_scenario] = @recourse(sp, va_scenario[i in keys(ref[:bus])])
         var[:p_scenario] = @recourse(sp, p_scenario[(l,i,j) in ref[:arcs_from]], 
@@ -144,7 +145,7 @@ function create_preventive_model(ref; budget::Int = 5,
         JuMP.@objective(sp, Min, 
             sum((gen["cost"][1] + gen["ramping_cost"]) * ramp_g_plus_scenario[i] for (i, gen) in ref[:gen]) + 
             sum(gen["ramping_cost"] * ramp_g_minus_scenario[i] for (i, gen) in ref[:gen]) + 
-            sum(load["shedding_cost"] * (load["pd"] - load_scenario[i]) for (i, load) in ref[:load])
+            sum(load["shedding_cost"] * (load["pd"] * load_factor - load_scenario[i]) for (i, load) in ref[:load])
         )
 
         for (i, _) in ref[:ref_buses]
@@ -153,7 +154,7 @@ function create_preventive_model(ref; budget::Int = 5,
 
         for (i, gen) in ref[:gen]
             @constraint(sp, ramp_g_scenario[i] == ramp_g_plus_scenario[i] - ramp_g_minus_scenario[i])
-            @constraint(sp, pg[i] - ramp_g_minus_scenario[i] >= gen["pmin"])
+            @constraint(sp, pg[i] - ramp_g_minus_scenario[i] >= 0.0)
             @constraint(sp, pg[i] + ramp_g_plus_scenario[i] <= gen["pmax"])
         end     
 
@@ -210,29 +211,19 @@ function create_preventive_model(ref; budget::Int = 5,
     return (model = sp, scenarios = scenarios, var = var, extra = extra)
 end 
 
+
+function set_pg_options(model, optimizer)
+    set_optimizer(model, ProgressiveHedging.Optimizer)
+    set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
+    set_optimizer_attribute(model, Penalizer(), Adaptive())
+    set_optimizer_attribute(model, PrimalTolerance(), 1e-3)
+    set_optimizer_attribute(model, DualTolerance(), 1e-2)
+    # set_optimizer_attribute(model, Execution(), Asynchronous())
+end 
+
 function solve_preventive_control_model(model, optimizer, method)
     if method == :pg 
-        set_optimizer(model, ProgressiveHedging.Optimizer)
-        set_optimizer_attribute(model, Penalizer(), Adaptive())
-        set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
-        optimize!(model)
-    end 
-
-    if method == :LShaped 
-        set_optimizer(model, LShaped.Optimizer)
-        set_optimizer_attribute(model, MasterOptimizer(), optimizer) 
-        set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
-        set_optimizer_attribute(model, FeasibilityStrategy(), FeasibilityCuts())
-        # set_optimizer_attribute(model, Regularizer(), TR()) # Set regularization to trust-region
-        # set_optimizer_attribute(model, Aggregator(), PartialAggregate(36))
+        set_pg_options(model, optimizer)
         optimize!(model)
     end 
 end 
-
-# function solve_topology_control_model(opt_model::OptModel, optimizer)
-#     JuMP.set_optimizer(opt_model.model, optimizer)
-#     JuMP.optimize!(opt_model.model)
-#     opt_model.solution[:termination_status] = JuMP.termination_status(opt_model.model)
-#     opt_model.solution[:objective] = round(JuMP.objective_value(opt_model.model); digits=4)
-#     return
-# end 

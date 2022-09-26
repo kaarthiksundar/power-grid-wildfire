@@ -1,4 +1,4 @@
-function create_topology_control_model(ref; budget::Int = 5)::OptModel 
+function create_topology_control_model(ref; budget::Int = 5, load_factor::Float64 = 1.0)::OptModel 
     opt_model = OptModel() 
     m = opt_model.model 
     var = opt_model.var 
@@ -63,7 +63,7 @@ function create_topology_control_model(ref; budget::Int = 5)::OptModel
             sum(p_expr[a] for a in ref[:bus_arcs][i]) +             # sum of active power flow on lines from bus i +
             sum(p_dc[a_dc] for a_dc in ref[:bus_arcs_dc][i]) ==     # sum of active power flow on HVDC lines from bus i =
             sum(pg[g] for g in ref[:bus_gens][i]) -                 # sum of active power generation at bus i -
-            sum(load["pd"] for load in bus_loads) -                 # sum of active load consumption at bus i -
+            load_factor * sum(load["pd"] for load in bus_loads) -   # sum of active load consumption at bus i -
             sum(shunt["gs"] for shunt in bus_shunts)*1.0^2          # sum of active shunt element injections at bus i
         )
     end

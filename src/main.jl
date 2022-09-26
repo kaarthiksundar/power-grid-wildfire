@@ -6,6 +6,9 @@ using CPLEX
 using StatsBase
 using StochasticPrograms
 
+using Random
+Random.seed!(2022)
+
 PowerModels.silence()
 milp_optimizer = JuMP.optimizer_with_attributes(CPLEX.Optimizer, "CPXPARAM_ScreenOutput" => 0)
 
@@ -25,12 +28,12 @@ cli_args = map(k -> "$k -> $(input_cli_args[k])", keys(input_cli_args) |> collec
 ref = parse_case_data(input_cli_args["datafile"]) |> get_ref
 
 if input_cli_args["model"] == "topology"
-    topology_control_model = create_topology_control_model(ref; budget = input_cli_args["switch_budget"])
+    topology_control_model = create_topology_control_model(ref; budget = input_cli_args["switch_budget"], load_factor = input_cli_args["load_weighting_factor"])
     printstyled("solving topology control model with budget...\n", color = :red)
     solve_topology_control_model(topology_control_model, milp_optimizer)
     @pipe "status: $(topology_control_model.solution[:termination_status]), obj: $(topology_control_model.solution[:objective])\n" |> printstyled(_, color = :cyan)
 elseif input_cli_args["model"] == "preventive"
-    preventive_model = create_preventive_model(ref; budget = input_cli_args["switch_budget"], num_scenarios = 5)
+    preventive_model = create_preventive_model(ref; budget = input_cli_args["switch_budget"], num_scenarios = input_cli_args["num_scenarios"])
     printstyled("solving preventive control model with budget...\n", color = :red)
     solve_preventive_control_model(preventive_model.model, milp_optimizer, :pg)
 else 

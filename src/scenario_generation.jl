@@ -1,4 +1,4 @@
-function generate_scenarios(ref, num_scenarios::Int; num_line_outages::Int = 3)
+function generate_scenarios(ref, num_scenarios::Int; num_line_outages::Int = 5)
     ids = ref[:arcs_from]
     total_risk = [ref[:branch][l]["power_risk"] for (l, _, _) in ids] |> sum 
     for (_, branch) in ref[:branch]
