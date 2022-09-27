@@ -10,7 +10,7 @@ function create_topology_control_model(ref; budget::Int = 5, load_factor::Float6
     # real power generation variables for the generators with limits 
     pg = var[:pg] = JuMP.@variable(m, 
         [i in keys(ref[:gen])], 
-        lower_bound = ref[:gen][i]["pmin"], 
+        lower_bound = 0.0, 
         upper_bound = ref[:gen][i]["pmax"]
     )
 
@@ -120,5 +120,26 @@ function solve_topology_control_model(opt_model::OptModel, optimizer)
     JuMP.optimize!(opt_model.model)
     opt_model.solution[:termination_status] = JuMP.termination_status(opt_model.model)
     opt_model.solution[:objective] = round(JuMP.objective_value(opt_model.model); digits=4)
+    opt_model.solution[:solve_time] = round(JuMP.solve_time(opt_model.model); digits=2)
+    return
+end 
+
+function save_topology_control_model_results(ref, load_factor, opt_model::OptModel, file::AbstractString)
+    z_branch = opt_model.var[:z_branch]
+    pg = opt_model.var[:pg]
+    results = Dict{String,Any}(
+        "termination_status" => opt_model.solution[:termination_status], 
+        "objective_value" => opt_model.solution[:objective],
+        "solve_time" => opt_model.solution[:solve_time],
+        "generation" => Dict(string(i) => Dict{String,Any}("pg" => value(pg[i]), "cost_coeff" => gen["cost"][1]) for (i, gen) in ref[:gen]),
+        "off_branch" =>  [i[1] for i in eachindex(z_branch) if value(z_branch[i]) < 1e-6],
+        "baseMVA" => ref[:baseMVA],
+        "total_load" => round([load_factor * load["pd"] for (_, load) in ref[:load]] |> sum; digits=4),
+        "total_generation" => round(value.(pg) |> vec |> sum; digits=4), 
+        "total_shunt" => round([shunt["gs"] for (_, shunt) in ref[:shunt]] |> sum; digits=4)
+    )
+    open(file, "w") do f
+        write(f, JSON.json(results, 2))
+    end
     return
 end 

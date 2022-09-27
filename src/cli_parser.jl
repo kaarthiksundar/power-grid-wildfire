@@ -9,7 +9,7 @@ function parse_cli_args()
         "--model", "-m"
             help = "topology/preventive/corrective"
             arg_type = String 
-            default = "preventive"
+            default = "topology"
         "--switch_budget", "-b"
             help = "number of lines that can be turned off in the topology control problem"
             arg_type = Int 
@@ -21,7 +21,11 @@ function parse_cli_args()
         "--load_weighting_factor", "-l"
             help = "weighting factor for loads" 
             arg_type = Float64 
-            default = 1.05
+            default = 1.00
+        "--result_folder", "-r"
+            help = "folder to save the results"
+            arg_type = String 
+            default = "./output/"
     end
 
     return parse_args(s)

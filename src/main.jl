@@ -5,6 +5,7 @@ using JuMP
 using CPLEX 
 using StatsBase
 using StochasticPrograms
+import JSON
 
 using Random
 Random.seed!(2022)
@@ -31,6 +32,10 @@ if input_cli_args["model"] == "topology"
     topology_control_model = create_topology_control_model(ref; budget = input_cli_args["switch_budget"], load_factor = input_cli_args["load_weighting_factor"])
     printstyled("solving topology control model with budget...\n", color = :red)
     solve_topology_control_model(topology_control_model, milp_optimizer)
+    result_folder = input_cli_args["result_folder"] * input_cli_args["model"]
+    (!isdir(result_folder)) && (mkdir(result_folder))
+    result_file = result_folder * "/budget_" * string(input_cli_args["switch_budget"]) * "_load_factor_" * string(Int(input_cli_args["load_weighting_factor"] * 100.0)) * ".json"
+    save_topology_control_model_results(ref, input_cli_args["load_weighting_factor"], topology_control_model, result_file)
     @pipe "status: $(topology_control_model.solution[:termination_status]), obj: $(topology_control_model.solution[:objective])\n" |> printstyled(_, color = :cyan)
 elseif input_cli_args["model"] == "preventive"
     preventive_model = create_preventive_model(ref; budget = input_cli_args["switch_budget"], num_scenarios = input_cli_args["num_scenarios"])
