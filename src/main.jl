@@ -36,7 +36,7 @@ if input_cli_args["model"] == "topology"
     (!isdir(result_folder)) && (mkdir(result_folder))
     result_file = result_folder * "/budget_" * string(input_cli_args["switch_budget"]) * "_load_factor_" * string(Int(input_cli_args["load_weighting_factor"] * 100.0)) * ".json"
     save_topology_control_model_results(ref, input_cli_args["load_weighting_factor"], topology_control_model, result_file)
-    @pipe "status: $(topology_control_model.solution[:termination_status]), obj: $(topology_control_model.solution[:objective])\n" |> printstyled(_, color = :cyan)
+    @pipe "output written to $result_file.\n" |> printstyled(_, color = :cyan)
 elseif input_cli_args["model"] == "preventive"
     preventive_model = create_preventive_model(ref; budget = input_cli_args["switch_budget"], num_scenarios = input_cli_args["num_scenarios"])
     printstyled("solving preventive control model with budget...\n", color = :red)
