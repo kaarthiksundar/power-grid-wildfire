@@ -124,7 +124,8 @@ function solve_topology_control_model(opt_model::OptModel, optimizer)
     return
 end 
 
-function save_topology_control_model_results(ref, load_factor, opt_model::OptModel, file::AbstractString)
+function save_topology_control_model_results(ref, cli_args, opt_model::OptModel, file::AbstractString)
+    load_factor = cli_args["load_weighting_factor"]
     z_branch = opt_model.var[:z_branch]
     pg = opt_model.var[:pg]
     results = Dict{String,Any}(

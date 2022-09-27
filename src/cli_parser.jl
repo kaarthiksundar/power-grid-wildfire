@@ -9,7 +9,7 @@ function parse_cli_args()
         "--model", "-m"
             help = "topology/preventive/corrective"
             arg_type = String 
-            default = "topology"
+            default = "preventive"
         "--switch_budget", "-b"
             help = "number of lines that can be turned off in the topology control problem"
             arg_type = Int 
@@ -17,7 +17,7 @@ function parse_cli_args()
         "--num_scenarios", "-s"
             help = "number of scenarios used for stochastic program"
             arg_type = Int 
-            default = 25
+            default = 2
         "--load_weighting_factor", "-l"
             help = "weighting factor for loads" 
             arg_type = Float64 
