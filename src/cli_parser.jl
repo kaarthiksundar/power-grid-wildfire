@@ -9,7 +9,7 @@ function parse_cli_args()
         "--model", "-m"
             help = "topology/preventive/corrective"
             arg_type = String 
-            default = "topology"
+            default = "corrective"
         "--switch_budget", "-b"
             help = "number of lines that can be turned off in the topology control problem"
             arg_type = Int 

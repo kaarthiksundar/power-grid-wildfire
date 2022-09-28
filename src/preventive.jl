@@ -260,8 +260,8 @@ function save_preventive_control_model_results(ref, cli_args, preventive_model, 
     
     gen_ramping_solution = Dict{String,Any}()
     for (i, _) in ref[:gen]
-        up_ramping = [value(model[2, :ramp_g_plus_scenario][i], s) for s in 1:num_scenarios]
-        down_ramping = [value(model[2, :ramp_g_minus_scenario][i], s) for s in 1:num_scenarios]
+        up_ramping = [round(value(model[2, :ramp_g_plus_scenario][i], s); digits=4) for s in 1:num_scenarios]
+        down_ramping = [round(value(model[2, :ramp_g_minus_scenario][i], s); digits=4) for s in 1:num_scenarios]
         total_up_ramping = up_ramping |> sum 
         total_down_ramping = down_ramping |> sum 
         (total_up_ramping > 0.0) && (gen_ramping_solution[string(i)] = up_ramping) 
@@ -276,7 +276,7 @@ function save_preventive_control_model_results(ref, cli_args, preventive_model, 
     load_shed_solution = Dict{String,Any}() 
     for (i, load) in ref[:load]
         pd = load_factor * load["pd"]
-        load_shed = pd .- [round(value(model[2, :load_scenario][i], s); digits=4) for s in 1:num_scenarios]
+        load_shed = round.(pd .- [round(value(model[2, :load_scenario][i], s); digits=4) for s in 1:num_scenarios]; digits=4)
         (load_shed |> sum > 0.0) && (load_shed_solution[string(i)] = load_shed)
     end 
      

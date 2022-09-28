@@ -19,7 +19,9 @@ include("data_parser.jl")
 include("types.jl")
 include("scenario_generation.jl")
 include("topology_control.jl")
+include("solver_options.jl")
 include("preventive.jl")
+include("corrective.jl")
 
 function run_base_model(ref, input_cli_args)
     topology_control_model = create_topology_control_model(ref; budget = input_cli_args["switch_budget"], load_factor = input_cli_args["load_weighting_factor"])
@@ -48,8 +50,17 @@ function run_preventive_control_model(ref, input_cli_args)
 end 
 
 function run_corrective_control_model(ref, input_cli_args)
-    @warn "not implemented"
-    return
+    corrective_model = create_corrective_model(ref; budget = input_cli_args["switch_budget"], num_scenarios = input_cli_args["num_scenarios"])
+    printstyled("solving corrective control model with budget...\n", color = :red)
+    solve_corrective_control_model(corrective_model.model, milp_optimizer)
+    result_folder = input_cli_args["result_folder"] * input_cli_args["model"]
+    (!isdir(result_folder)) && (mkdir(result_folder))
+    result_file = result_folder * "/budget_" * string(input_cli_args["switch_budget"]) * 
+        "_load_factor_" * string(Int(input_cli_args["load_weighting_factor"] * 100.0)) * 
+        "_num_scenarios_" * string(input_cli_args["num_scenarios"]) * ".json"
+    save_corrective_control_model_results(ref, input_cli_args, corrective_model, result_file)
+    @pipe "output written to $result_file.\n" |> printstyled(_, color = :cyan)
+    return corrective_model
 end 
 
 
@@ -63,3 +74,4 @@ ref = parse_case_data(input_cli_args["datafile"]) |> get_ref
 (input_cli_args["model"] == "topology") && (run_base_model(ref, input_cli_args))
 (input_cli_args["model"] == "preventive") && (run_preventive_control_model(ref, input_cli_args))
 (input_cli_args["model"] == "corrective") && (run_corrective_control_model(ref, input_cli_args)) 
+printstyled("solve complete", color = :cyan)
