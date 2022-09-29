@@ -3,7 +3,7 @@ function create_preventive_model(ref; budget::Int = 5,
     num_scenarios::Int = 10, 
     ramping_scaling::Float64 = 1.0, 
     load_shed_scaling::Float64 = 1.0, 
-    decomposition_type = ScenarioDecomposition())
+    decomposition_type = DistributedScenarioDecomposition())
 
     scenarios = generate_scenarios(ref, num_scenarios)
     add_costs(ref, ramping_scaling, load_shed_scaling)

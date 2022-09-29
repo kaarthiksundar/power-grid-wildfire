@@ -1,14 +1,28 @@
-using Pipe 
-using ArgParse 
-using PowerModels
-using JuMP
-using CPLEX 
-using StatsBase
-using StochasticPrograms
-import JSON
+using Distributed
 
-using Random
-Random.seed!(2022)
+addprocs(20)
+
+@everywhere using Pkg
+@everywhere Pkg.activate(".")
+
+@everywhere using Pipe 
+@everywhere using ArgParse 
+@everywhere using PowerModels
+@everywhere using JuMP
+@everywhere using CPLEX 
+@everywhere using StatsBase
+@everywhere using StochasticPrograms
+@everywhere import JSON
+
+
+
+@everywhere using Random
+@everywhere Random.seed!(2022)
+
+for w in workers()
+    # Do not log on worker nodes
+    remotecall(()->global_logger(NullLogger()),w)
+end
 
 PowerModels.silence()
 milp_optimizer = JuMP.optimizer_with_attributes(CPLEX.Optimizer, "CPXPARAM_ScreenOutput" => 0)
