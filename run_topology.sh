@@ -1,0 +1,2 @@
+julia --project=. src/main.jl --model topology --switch_budget 5 --load_weighting_factor 1.0 --result_folder ./output/
+julia --project=. src/main.jl --model topology --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/

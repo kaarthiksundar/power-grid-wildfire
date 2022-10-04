@@ -3,9 +3,12 @@ function create_preventive_model(ref; budget::Int = 5,
     num_scenarios::Int = 10, 
     ramping_scaling::Float64 = 1.0, 
     load_shed_scaling::Float64 = 1.0, 
-    decomposition_type = DistributedScenarioDecomposition())
+    off_branches = [],
+    parallel::Bool = false)
 
+    decomposition_type = (parallel) ? DistributedScenarioDecomposition() : ScenarioDecomposition()
     scenarios = generate_scenarios(ref, num_scenarios)
+    # on_branches = setdiff(Set(keys(ref[:branch])), Set(off_branches)) |> collect
     add_costs(ref, ramping_scaling, load_shed_scaling)
     var = Dict{Symbol,Any}()
     extra = Dict{Symbol,Any}()
@@ -14,6 +17,7 @@ function create_preventive_model(ref; budget::Int = 5,
 
     @first_stage sp = begin 
         var[:z_branch] = @decision(sp, z_branch[l in keys(ref[:branch])], binary = true)
+        # var[:z_branch_off] = @decision(sp, z_branch_off[l in off_branches], binary = true)
         var[:pg] = @decision(sp, 
             pg[i in keys(ref[:gen])], 
             lower_bound = 0.0, 
@@ -43,6 +47,7 @@ function create_preventive_model(ref; budget::Int = 5,
         
         @objective(sp, Min, sum(gen["cost"][1] * pg[i] for (i, gen) in ref[:gen]))
 
+        # @constraint(sp, sum((1 - z_branch_on[i]) for i in on_branches; init=0) + sum((1 - z_branch_off[i]) for i in off_branches; init = 0) <= budget)
         @constraint(sp, sum((1 - z_branch[i]) for i in keys(ref[:branch])) <= budget)
         
         """ not required for the preventive model - left it for future additions """
@@ -103,6 +108,7 @@ function create_preventive_model(ref; budget::Int = 5,
 
     @second_stage sp = begin 
         @known(sp, z_branch)
+        # @known(sp, z_branch_off)
         @known(sp, pg)
         @uncertain ξ[(l,i,j) in ref[:arcs_from]] 
 
@@ -187,6 +193,11 @@ function create_preventive_model(ref; budget::Int = 5,
             p_fr  = p_scenario[f_idx]
             va_fr = va_scenario[f_bus]
             va_to = va_scenario[t_bus]
+            # if (i in on_branches)
+            #     z = z_branch_on[i]
+            # else 
+            #     z = (1 - z_branch_off[i])
+            # end 
             z = z_branch[i]
     
             if b <= 0
@@ -233,12 +244,14 @@ function solve_preventive_control_model(model, optimizer; method=:pg)
     return
 end 
 
-function save_preventive_control_model_results(ref, cli_args, preventive_model, file::AbstractString)
+function save_preventive_control_model_results(ref, cli_args, preventive_model, off_branches, file::AbstractString)
     model = preventive_model.model 
     num_scenarios = cli_args["num_scenarios"]
     scenarios = preventive_model.scenarios
     load_factor = cli_args["load_weighting_factor"]
     pg = preventive_model.var[:pg]
+    # z_branch_on = preventive_model.var[:z_branch_on]
+    # z_branch_off = preventive_model.var[:z_branch_off]
     z_branch = preventive_model.var[:z_branch]
     
     scenarios_dictionary = Dict{String,Any}()
@@ -295,7 +308,10 @@ function save_preventive_control_model_results(ref, cli_args, preventive_model, 
             "load_shedding_cost" => Dict{String,Any}(string(i) => load["shedding_cost"] for (i, load) in ref[:load]) 
         ),
         "base_generation" => Dict{String,Any}(string(i) => JuMP.value(pg[i]) for (i, _) in ref[:gen]),
-        "off_branch" =>  [i[1] for i in eachindex(z_branch) if value(z_branch[i]) < 1e-6],
+        # "original_off_branches" => off_branches,
+        "turned_off_branches" =>  [i[1] for i in eachindex(z_branch) if value(z_branch[i]) < 1e-6],
+        # [i[1] for i in eachindex(z_branch_on) if value(z_branch_on[i]) < 1e-6],
+        # "turned_on_branches" =>  [i[1] for i in eachindex(z_branch_off) if value(z_branch_off[i]) < 1e-6],
         "baseMVA" => ref[:baseMVA],
         "total_base_load" => round([load_factor * load["pd"] for (_, load) in ref[:load]] |> sum; digits=4),
         "total_base_generation" => round(value.(pg) |> vec |> sum; digits=4), 

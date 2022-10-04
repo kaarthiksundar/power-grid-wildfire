@@ -3,9 +3,12 @@ function create_corrective_model(ref; budget::Int = 5,
     num_scenarios::Int = 10, 
     ramping_scaling::Float64 = 1.0, 
     load_shed_scaling::Float64 = 1.0, 
-    decomposition_type = DistributedScenarioDecomposition())
+    off_branches = [],
+    parallel::Bool = false)
 
+    decomposition_type = (parallel) ? DistributedScenarioDecomposition() : ScenarioDecomposition()
     scenarios = generate_scenarios(ref, num_scenarios)
+    # on_branches = setdiff(Set(keys(ref[:branch])), Set(off_branches)) |> collect
     add_costs(ref, ramping_scaling, load_shed_scaling)
     var = Dict{Symbol,Any}()
     extra = Dict{Symbol,Any}()
@@ -101,10 +104,17 @@ function create_corrective_model(ref; budget::Int = 5,
     end 
 
     @second_stage sp = begin 
-        # @known(sp, z_branch)
+        # @known(sp, z_branch_on)
+        # @known(sp, z_branch_off)
         @known(sp, pg)
         @uncertain ξ[(l,i,j) in ref[:arcs_from]] 
 
+        # var[:z_branch_on_scenario] = @recourse(sp, 
+        #     z_branch_on_scenario[l in on_branches], binary = true
+        # )
+        # var[:z_branch_off_scenario] = @recourse(sp, 
+        #     z_branch_off_scenario[l in off_branches], binary = true
+        # )
         var[:z_branch_scenario] = @recourse(sp, 
             z_branch_scenario[l in keys(ref[:branch])], binary = true
         )
@@ -189,6 +199,11 @@ function create_corrective_model(ref; budget::Int = 5,
             p_fr  = p_scenario[f_idx]
             va_fr = va_scenario[f_bus]
             va_to = va_scenario[t_bus]
+            # if (i in on_branches)
+            #     z = z_branch_on_scenario[i]
+            # else 
+            #     z = (1 - z_branch_off_scenario[i])
+            # end
             z = z_branch_scenario[i]
     
             if b <= 0
@@ -211,6 +226,7 @@ function create_corrective_model(ref; budget::Int = 5,
             @constraint(sp, p_fr >= -rate_a * z * (1 - ξ[f_idx]))
         end 
 
+        # @constraint(sp, sum((1 - z_branch_on_scenario[i]) for i in on_branches; init=0) + sum((1 - z_branch_off_scenario[i]) for i in off_branches; init=0) <= budget)
         @constraint(sp, sum((1 - z_branch_scenario[i]) for i in keys(ref[:branch])) <= budget)
     end 
 
@@ -227,8 +243,9 @@ function solve_corrective_control_model(model, optimizer; method=:pg)
     return
 end 
 
-function save_corrective_control_model_results(ref, cli_args, corrective_model, file::AbstractString)
+function save_corrective_control_model_results(ref, cli_args, corrective_model, off_branches, file::AbstractString)
     model = corrective_model.model 
+    # on_branches = setdiff(Set(keys(ref[:branch])), Set(off_branches)) |> collect
     num_scenarios = cli_args["num_scenarios"]
     scenarios = corrective_model.scenarios
     load_factor = cli_args["load_weighting_factor"]
@@ -272,10 +289,14 @@ function save_corrective_control_model_results(ref, cli_args, corrective_model, 
         load_shed = round.(pd .- [round(value(model[2, :load_scenario][i], s); digits=4) for s in 1:num_scenarios]; digits=4)
         (load_shed |> sum > 0.0) && (load_shed_solution[string(i)] = load_shed)
     end 
-     
-    off_branch = Dict{String,Any}(
-        string(i) => [j[1] for j in keys(ref[:branch]) if value(model[2, :z_branch_scenario][j], i) < 1e-6] for i in 1:num_scenarios
+
+    turned_off_branches = Dict{String,Any}(
+        string(i) => [j[1] for j in on_branches if value(model[2, :z_branch_scenario][j], i) < 1e-6] for i in 1:num_scenarios
     )
+
+    # turned_on_branches = Dict{String,Any}(
+    #     string(i) => [j[1] for j in off_branches if value(model[2, :z_branch_off_scenarios][j], i) < 1e-6] for i in 1:num_scenarios
+    # )
 
     results = Dict{String,Any}(
         "num_scenarios" => num_scenarios, 
@@ -291,7 +312,9 @@ function save_corrective_control_model_results(ref, cli_args, corrective_model, 
             "load_shedding_cost" => Dict{String,Any}(string(i) => load["shedding_cost"] for (i, load) in ref[:load]) 
         ),
         "base_generation" => Dict{String,Any}(string(i) => JuMP.value(pg[i]) for (i, _) in ref[:gen]),
-        "off_branch" =>  off_branch,
+        # "original_off_branches" => off_branches,
+        "turned_off_branches" => turned_off_branches, 
+        # "turned_on_branches" => turned_on_branches,
         "baseMVA" => ref[:baseMVA],
         "total_base_load" => round([load_factor * load["pd"] for (_, load) in ref[:load]] |> sum; digits=4),
         "total_base_generation" => round(value.(pg) |> vec |> sum; digits=4), 
