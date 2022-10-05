@@ -6,6 +6,10 @@ function parse_cli_args()
             help = "case file name with full path (relative to project's  root directory)"
             arg_type = String 
             default = "./data/RTS_GMLC.m"
+        "--scenariofile"
+            help = "scenario file name with full path (relative to the project's root directory)"
+            arg_type = String 
+            default = "./data/RTS_GMLC_scenarios.json"
         "--model", "-m"
             help = "topology/preventive/corrective"
             arg_type = String 

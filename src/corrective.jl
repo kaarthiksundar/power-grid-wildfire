@@ -4,10 +4,11 @@ function create_corrective_model(ref; budget::Int = 5,
     ramping_scaling::Float64 = 1.0, 
     load_shed_scaling::Float64 = 1.0, 
     off_branches = [],
-    parallel::Bool = false)
+    parallel::Bool = false,
+    scenariofile = "./data/RTS_GMLC_scenarios.json")
 
     decomposition_type = (parallel) ? DistributedScenarioDecomposition() : ScenarioDecomposition()
-    scenarios = generate_scenarios(ref, num_scenarios)
+    scenarios = generate_scenarios(ref, num_scenarios, scenariofile)
     # on_branches = setdiff(Set(keys(ref[:branch])), Set(off_branches)) |> collect
     add_costs(ref, ramping_scaling, load_shed_scaling)
     var = Dict{Symbol,Any}()

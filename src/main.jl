@@ -11,12 +11,8 @@ addprocs(num_procs)
 @everywhere using PowerModels
 @everywhere using JuMP
 @everywhere using CPLEX 
-@everywhere using StatsBase
 @everywhere using StochasticPrograms
 @everywhere import JSON
-
-@everywhere using Random
-@everywhere Random.seed!(2022)
 
 include("cli_parser.jl")
 
@@ -86,11 +82,13 @@ function run_base_model(ref, input_cli_args)
 end 
 
 function run_preventive_control_model(ref, input_cli_args)
+    scenariofile = input_cli_args["scenariofile"]
     off_branches = get_topology_control_off_branches(input_cli_args)
     preventive_model = create_preventive_model(ref; 
         budget = input_cli_args["switch_budget"], 
         num_scenarios = input_cli_args["num_scenarios"], 
-        off_branches = off_branches, parallel = input_cli_args["parallel"])
+        off_branches = off_branches, parallel = input_cli_args["parallel"], 
+        scenariofile = scenariofile)
     printstyled("solving preventive control model with budget...\n", color = :red)
     solve_preventive_control_model(preventive_model.model, milp_optimizer)
     result_file = create_result_file_with_path(input_cli_args)
@@ -100,11 +98,13 @@ function run_preventive_control_model(ref, input_cli_args)
 end 
 
 function run_corrective_control_model(ref, input_cli_args)
+    scenariofile = input_cli_args["scenariofile"]
     off_branches = get_topology_control_off_branches(input_cli_args)
     corrective_model = create_corrective_model(ref; 
         budget = input_cli_args["switch_budget"], 
         num_scenarios = input_cli_args["num_scenarios"],
-        off_branches = off_branches, parallel = input_cli_args["parallel"])
+        off_branches = off_branches, parallel = input_cli_args["parallel"], 
+        scenariofile = scenariofile)
     printstyled("solving corrective control model with budget...\n", color = :red)
     solve_corrective_control_model(corrective_model.model, milp_optimizer)
     result_file = create_result_file_with_path(input_cli_args)
