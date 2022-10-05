@@ -24,7 +24,7 @@ function parse_cli_args()
         "--num_scenarios", "-s"
             help = "number of scenarios used for stochastic program"
             arg_type = Int 
-            default = 2
+            default = 5
         "--load_weighting_factor", "-l"
             help = "weighting factor for loads" 
             arg_type = Float64 
