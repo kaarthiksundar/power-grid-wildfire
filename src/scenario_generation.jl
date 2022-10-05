@@ -10,7 +10,7 @@ function generate_scenarios(ref, num_scenarios::Int; num_line_outages::Int = 5, 
     scenarios = AbstractScenario[]
     # push!(scenarios, @scenario ξ[id in ids] = [0.0 for id in ids] probability = no_wildfire_probability)
     for _ in 1:num_scenarios
-        samples = StatsBase.sample(ids, Weights(weights), num_line_outages, replace=false)        
+        samples = StatsBase.sample(ids, Weights(weights), num_line_outages) |> unique!        
         scenario = @scenario ξ[id in ids] = [(id in samples) ? 1.0 : 0.0 for id in ids] probability = scenario_probability 
         push!(scenarios, scenario)
     end 

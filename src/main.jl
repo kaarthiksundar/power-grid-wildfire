@@ -32,6 +32,7 @@ for w in workers()
     remotecall(()->global_logger(NullLogger()),w)
 end
 
+
 function create_result_file_with_path(input_cli_args)
     result_folder = input_cli_args["result_folder"] * input_cli_args["model"]
     (!isdir(result_folder)) && (mkdir(result_folder))
