@@ -1,5 +1,5 @@
 function set_pg_options(model, optimizer; parallel::Bool = false)
-    set_optimizer(model, ProgressiveHedging.Optimizer)
+    StochasticPrograms.set_optimizer!(model.optimizer, ProgressiveHedging.Optimizer)
     set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
     set_optimizer_attribute(model, Penalizer(), Adaptive())
     set_optimizer_attribute(model, PrimalTolerance(), 1e-3)
