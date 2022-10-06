@@ -225,19 +225,9 @@ function create_preventive_model(ref; budget::Int = 5,
     return (model = sp, scenarios = scenarios, var = var, extra = extra)
 end 
 
-
-function set_pg_options(model, optimizer)
-    set_optimizer(model, ProgressiveHedging.Optimizer)
-    set_optimizer_attribute(model, SubProblemOptimizer(), optimizer)
-    set_optimizer_attribute(model, Penalizer(), Adaptive())
-    set_optimizer_attribute(model, PrimalTolerance(), 1e-3)
-    set_optimizer_attribute(model, DualTolerance(), 1e-2)
-    # set_optimizer_attribute(model, Execution(), Asynchronous())
-end 
-
-function solve_preventive_control_model(model, optimizer; method=:pg)
+function solve_preventive_control_model(model, optimizer, input_cli_args; method=:pg)
     if method == :pg 
-        set_pg_options(model, optimizer)
+        set_pg_options(model, optimizer; parallel = input_cli_args["parallel"])
         optimize!(model)
     else 
         @error "unknown solution algorithm for preventive control model"

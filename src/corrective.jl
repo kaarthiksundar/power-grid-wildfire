@@ -234,12 +234,12 @@ function create_corrective_model(ref; budget::Int = 5,
     return (model = sp, scenarios = scenarios, var = var, extra = extra)
 end 
 
-function solve_corrective_control_model(model, optimizer; method=:pg)
+function solve_corrective_control_model(model, optimizer, input_cli_args; method=:pg)
     if method == :pg 
-        set_pg_options(model, optimizer)
+        set_pg_options(model, optimizer; parallel = input_cli_args["parallel"])
         optimize!(model)
     else 
-        @error "unknown solution algorithm for corrective control model"
+        @error "unknown solution algorithm for preventive control model"
     end 
     return
 end 
