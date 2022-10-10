@@ -292,7 +292,7 @@ function save_corrective_control_model_results(ref, cli_args, corrective_model, 
     end 
 
     turned_off_branches = Dict{String,Any}(
-        string(i) => [j[1] for j in on_branches if value(model[2, :z_branch_scenario][j], i) < 1e-6] for i in 1:num_scenarios
+        string(i) => [j[1] for j in keys(ref[:branch]) if value(model[2, :z_branch_scenario][j], i) < 1e-6] for i in 1:num_scenarios
     )
 
     # turned_on_branches = Dict{String,Any}(
