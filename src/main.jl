@@ -1,6 +1,6 @@
 using Distributed
 
-num_procs = trunc(Int, Sys.CPU_THREADS * 0.75)
+num_procs = trunc(Int, Sys.CPU_THREADS * 0.50)
 addprocs(num_procs)
 
 @everywhere using Pkg
@@ -84,14 +84,15 @@ end
 function run_preventive_control_model(ref, input_cli_args)
     scenariofile = input_cli_args["scenariofile"]
     off_branches = get_topology_control_off_branches(input_cli_args)
+    result_file = create_result_file_with_path(input_cli_args)
+    (isfile(result_file)) && (@info "result file exists... quitting"; return)
     preventive_model = create_preventive_model(ref; 
         budget = input_cli_args["switch_budget"], 
         num_scenarios = input_cli_args["num_scenarios"], 
         off_branches = off_branches, parallel = input_cli_args["parallel"], 
-        scenariofile = scenariofile)
+        scenariofile = scenariofile, load_factor = input_cli_args["load_weighting_factor"])
     printstyled("solving preventive control model with budget...\n", color = :red)
     solve_preventive_control_model(preventive_model.model, milp_optimizer, input_cli_args)
-    result_file = create_result_file_with_path(input_cli_args)
     save_preventive_control_model_results(ref, input_cli_args, preventive_model, off_branches, result_file)
     @pipe "output written to $result_file.\n" |> printstyled(_, color = :cyan)
     return preventive_model
@@ -100,14 +101,15 @@ end
 function run_corrective_control_model(ref, input_cli_args)
     scenariofile = input_cli_args["scenariofile"]
     off_branches = get_topology_control_off_branches(input_cli_args)
+    result_file = create_result_file_with_path(input_cli_args)
+    (isfile(result_file)) && (@info "result file exists... quitting"; return)
     corrective_model = create_corrective_model(ref; 
         budget = input_cli_args["switch_budget"], 
         num_scenarios = input_cli_args["num_scenarios"],
         off_branches = off_branches, parallel = input_cli_args["parallel"], 
-        scenariofile = scenariofile)
+        scenariofile = scenariofile, load_factor = input_cli_args["load_weighting_factor"])
     printstyled("solving corrective control model with budget...\n", color = :red)
     solve_corrective_control_model(corrective_model.model, milp_optimizer, input_cli_args)
-    result_file = create_result_file_with_path(input_cli_args)
     save_corrective_control_model_results(ref, input_cli_args, corrective_model, off_branches, result_file)
     @pipe "output written to $result_file.\n" |> printstyled(_, color = :cyan)
     return corrective_model

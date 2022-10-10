@@ -1,13 +1,20 @@
-# serial load factor 1.00 runs 
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 20
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 40
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 60
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 80
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 100
-
-# serial load factor 1.05 runs 
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 120
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 140
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 160
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 180
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.00 --result_folder ./output/ -s 200
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 20
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 40
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 60
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 80
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 100
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 120
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 140
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 160
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 180
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ -s 200
