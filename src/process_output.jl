@@ -69,11 +69,10 @@ function get_solve_stats(files)
         append!(row, [s_p_time, p_p_time, s_c_time, p_c_time])
         
         append!(row, [s_p_obj, s_c_obj, s_rel_gap])
-        append!(row, [p_p_obj, p_c_obj, p_rel_gap])
 
         append!(row, [s_p_iter, p_p_iter])
         append!(row, [s_c_iter, p_c_iter])
-        
+
         push!(results, row)
     end 
     return results
@@ -92,7 +91,6 @@ function process_solution()
         "serial prev. time", "parallel prev. time", 
         "serial corr. time", "parallel corr. time", 
         "serial prev. obj. val.", "serial corr. obj. val.", "serial obj. rel. gap.", 
-        "parallel prev. obj. val.", "parallel corr. obj. val.", "parallel obj. rel. gap.", 
         "serial prev. iter.", "parallel prev. iter.", 
         "serial corr. iter.", "parallel corr. iter.",]
     write_csv("./output/solution_stats.csv", header, rows)
