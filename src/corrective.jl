@@ -259,6 +259,21 @@ function save_corrective_control_model_results(ref, cli_args, corrective_model, 
         scenario_dict = Dict{String,Any}(string(l) => data.data[data.lookup[1][(l, i, j)]] for (l, i, j) in data.axes[1])
         scenarios_dictionary[string(k)] = [parse(Int32, i) for (i, val) in scenario_dict if val == 1.0]
     end     
+
+    if cli_args["parallel"] 
+        results = Dict{String,Any}(
+            "num_scenarios" => num_scenarios, 
+            "termination_status" => JuMP.termination_status(model), 
+            "objective_value" => round(JuMP.objective_value(model); digits=4),
+            "solve_time" => round(JuMP.solve_time(model); digits=2),
+            "num_iterations" => num_iterations(model.optimizer.optimizer),
+        )
+        open(file, "w") do f
+            write(f, JSON.json(results, 2))
+        end
+        
+        return
+    end 
     
     total_scenario_ramping_solution = Dict{String,Any}(
         "up_ramping" => Dict{String,Any}(

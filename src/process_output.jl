@@ -13,10 +13,13 @@ function get_result_file_with_path(parallel::Bool)
             "_num_scenarios_" * num_scenarios * "_notopology.json"
         push!(file_names, (1.00, preventive_path * file, corrective_path * file))
     end 
-    file = "budget_5_load_factor_" * 
+    for i in 20:20:200
+        num_scenarios = string(i)
+        file = "budget_5_load_factor_" * 
             string(Int(1.05 * 100.0)) * serial_parallel * 
-            "_num_scenarios_20_notopology.json"
-    push!(file_names, (1.05, preventive_path * file, corrective_path * file))
+            "_num_scenarios_" * num_scenarios * "_notopology.json"
+        push!(file_names, (1.05, preventive_path * file, corrective_path * file))
+    end
     return file_names
 end 
 

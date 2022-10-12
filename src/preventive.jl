@@ -244,6 +244,21 @@ function save_preventive_control_model_results(ref, cli_args, preventive_model, 
     # z_branch_on = preventive_model.var[:z_branch_on]
     # z_branch_off = preventive_model.var[:z_branch_off]
     z_branch = preventive_model.var[:z_branch]
+
+    if cli_args["parallel"] 
+        results = Dict{String,Any}(
+            "num_scenarios" => num_scenarios, 
+            "termination_status" => JuMP.termination_status(model), 
+            "objective_value" => round(JuMP.objective_value(model); digits=4),
+            "solve_time" => round(JuMP.solve_time(model); digits=2),
+            "num_iterations" => num_iterations(model.optimizer.optimizer),
+        )
+        open(file, "w") do f
+            write(f, JSON.json(results, 2))
+        end
+        
+        return
+    end 
     
     scenarios_dictionary = Dict{String,Any}()
     for k in 1:num_scenarios 
