@@ -25,13 +25,23 @@ function parse_cli_args()
             help = "maximum number of lines outages"
             arg_type = Int 
             default = 4
+        "--threshold_risk", "-r"
+            help = "flag to threshold risk (lower bound)"
+            action = :store_true
+        "--threshold_risk_value", "-t"
+            help = "threshold risk value at"
+            arg_type = Float64 
+            default = 3.0
     end
     return parse_args(s)
 end
 
 function generate_scenarios(args)
+    @show args
     datafile = args["datafile"]
-    scenariofile = replace(datafile, ".m" => "_scenarios.json")
+    threshold = ""
+    (args["threshold_risk"]) && (threshold = "threshold")
+    scenariofile = replace(datafile, ".m" => "_scenarios_" * threshold * ".json")
     (isfile(scenariofile)) && (@info "scenario file exists."; return)
     num_scenarios = args["num_scenarios"]
     num_line_outages = args["num_line_outages"]
@@ -40,6 +50,13 @@ function generate_scenarios(args)
     scenarios = Dict{String,Any}()
     ref = parse_case_data(args["datafile"]) |> get_ref
     ids = ref[:arcs_from]
+    if args["threshold_risk"]
+        for (_, branch) in ref[:branch]
+            (branch["power_risk"] <= args["threshold_risk_value"]) && (branch["power_risk"] = 0.0)
+        end 
+    end 
+    num_non_zero_risk_lines = [ref[:branch][l]["power_risk"] for (l, _, _) in ids if ref[:branch][l]["power_risk"] != 0.0] |> length
+    println("num non-zero risk lines: $num_non_zero_risk_lines")
     total_risk = [ref[:branch][l]["power_risk"] for (l, _, _) in ids] |> sum 
     for (_, branch) in ref[:branch]
         branch["prob"] = branch["power_risk"]/total_risk
