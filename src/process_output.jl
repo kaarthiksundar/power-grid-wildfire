@@ -39,6 +39,7 @@ end
 function get_solve_stats(files)
     results = []
     for (lf, s_p, s_c, p_p, p_c) in files 
+        (!isfile(s_p) || !isfile(s_c) || !isfile(p_p) || !isfile(p_c)) && (continue)
         s_p_data = JSON.parsefile(s_p)
         s_c_data = JSON.parsefile(s_c)
         p_p_data = JSON.parsefile(p_p)
@@ -50,6 +51,8 @@ function get_solve_stats(files)
         p_c_obj = p_c_data["objective_value"]
         s_rel_gap = trunc((s_p_obj - s_c_obj)/s_c_obj * 100.0; digits=2)
         p_rel_gap = trunc((p_p_obj - p_c_obj)/p_c_obj * 100.0; digits=2)
+        prev_rel_gap = trunc(abs(s_p_obj - p_p_obj)/s_p_obj * 100.0; digits=2)
+        corr_rel_gap = trunc(abs(s_c_obj - p_c_obj)/s_c_obj * 100.0; digits=2)
 
         s_p_time = s_p_data["solve_time"]
         s_c_time = s_c_data["solve_time"]
@@ -69,6 +72,8 @@ function get_solve_stats(files)
         append!(row, [s_p_time, p_p_time, s_c_time, p_c_time])
         
         append!(row, [s_p_obj, s_c_obj, s_rel_gap])
+        append!(row, [p_p_obj, p_c_obj, p_rel_gap])
+        append!(row, [prev_rel_gap, corr_rel_gap])
 
         append!(row, [s_p_iter, p_p_iter])
         append!(row, [s_c_iter, p_c_iter])
@@ -91,6 +96,8 @@ function process_solution()
         "serial prev. time", "parallel prev. time", 
         "serial corr. time", "parallel corr. time", 
         "serial prev. obj. val.", "serial corr. obj. val.", "serial obj. rel. gap.", 
+        "parallel prev. obj. val.", "parallel corr. obj. val.", "parallel obj. rel. gap.", 
+        "prev. ser. to par. rel. gap", "corr. ser. to par. rel. gap", 
         "serial prev. iter.", "parallel prev. iter.", 
         "serial corr. iter.", "parallel corr. iter.",]
     write_csv("./output/solution_stats.csv", header, rows)

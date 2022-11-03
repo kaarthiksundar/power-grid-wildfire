@@ -36,6 +36,9 @@ function parse_cli_args()
         "--parallel"
             help = "flag for parallel run"
             action = :store_true
+        "--lshaped"
+            help = "flag for Lshaped run"
+            action = :store_true
     end
 
     return parse_args(s)

@@ -17,4 +17,4 @@ julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weight
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ --parallel -s 140
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ --parallel -s 160
 julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ --parallel -s 180
-julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ --parallel -s 100
+julia --project=. src/main.jl --model corrective --switch_budget 5 --load_weighting_factor 1.05 --result_folder ./output/ --parallel -s 200

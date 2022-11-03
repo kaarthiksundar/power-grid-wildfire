@@ -5,9 +5,13 @@ function create_preventive_model(ref; budget::Int = 5,
     load_shed_scaling::Float64 = 1.0, 
     off_branches = [],
     parallel::Bool = false, 
-    scenariofile = "./data/RTS_GMLC_scenarios.json")
+    scenariofile = "./data/RTS_GMLC_scenarios.json", 
+    pg::Bool = true)
 
-    decomposition_type = (parallel) ? DistributedScenarioDecomposition() : ScenarioDecomposition()
+    (parallel && pg) && (decomposition_type = DistributedScenarioDecomposition())
+    (parallel && !pg) && (decomposition_type = DistributedStageDecomposition())
+    (!parallel && pg) && (decomposition_type = ScenarioDecomposition())
+    (!parallel && !pg) && (decomposition_type = StageDecomposition())
     scenarios = generate_scenarios(ref, num_scenarios, scenariofile)
     # on_branches = setdiff(Set(keys(ref[:branch])), Set(off_branches)) |> collect
     add_costs(ref, ramping_scaling, load_shed_scaling)
@@ -229,8 +233,9 @@ function solve_preventive_control_model(model, optimizer, input_cli_args; method
     if method == :pg 
         set_pg_options(model, optimizer; parallel = input_cli_args["parallel"])
         optimize!(model)
-    else 
-        @error "unknown solution algorithm for preventive control model"
+    else
+        set_lshaped_options(model, optimizer; parallel = input_cli_args["parallel"])
+        optimize!(model)
     end 
     return
 end 
@@ -256,7 +261,7 @@ function save_preventive_control_model_results(ref, cli_args, preventive_model, 
         open(file, "w") do f
             write(f, JSON.json(results, 2))
         end
-        
+
         return
     end 
     

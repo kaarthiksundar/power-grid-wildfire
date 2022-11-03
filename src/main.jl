@@ -83,6 +83,7 @@ end
 
 function run_preventive_control_model(ref, input_cli_args)
     scenariofile = input_cli_args["scenariofile"]
+    method = (input_cli_args["lshaped"]) ? Symbol("lshaped") : Symbol("pg")
     off_branches = get_topology_control_off_branches(input_cli_args)
     result_file = create_result_file_with_path(input_cli_args)
     (isfile(result_file)) && (@info "result file exists... quitting"; return)
@@ -90,9 +91,10 @@ function run_preventive_control_model(ref, input_cli_args)
         budget = input_cli_args["switch_budget"], 
         num_scenarios = input_cli_args["num_scenarios"], 
         off_branches = off_branches, parallel = input_cli_args["parallel"], 
-        scenariofile = scenariofile, load_factor = input_cli_args["load_weighting_factor"])
+        scenariofile = scenariofile, load_factor = input_cli_args["load_weighting_factor"],
+        pg = (method == :pg))
     printstyled("solving preventive control model with budget...\n", color = :red)
-    solve_preventive_control_model(preventive_model.model, milp_optimizer, input_cli_args)
+    solve_preventive_control_model(preventive_model.model, milp_optimizer, input_cli_args, method = method)
     save_preventive_control_model_results(ref, input_cli_args, preventive_model, off_branches, result_file)
     @pipe "output written to $result_file.\n" |> printstyled(_, color = :cyan)
     return preventive_model
