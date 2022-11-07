@@ -24,7 +24,7 @@ function parse_cli_args()
         "--num_line_outages", "-n"
             help = "maximum number of lines outages"
             arg_type = Int 
-            default = 4
+            default = 3
         "--threshold_risk", "-r"
             help = "flag to threshold risk (lower bound)"
             action = :store_true
@@ -54,8 +54,17 @@ function generate_scenarios(args)
         for (_, branch) in ref[:branch]
             (branch["power_risk"] <= args["threshold_risk_value"]) && (branch["power_risk"] = 0.0)
         end 
+        # non_zero_risk_lines = [l for (l, _, _) in ids if ref[:branch][l]["power_risk"] != 0.0][1:3]
+        # for (l, branch) in ref[:branch]
+        #     if !(l in non_zero_risk_lines)
+        #         branch["power_risk"] = 0.0
+        #     end 
+        # end 
     end 
-    num_non_zero_risk_lines = [ref[:branch][l]["power_risk"] for (l, _, _) in ids if ref[:branch][l]["power_risk"] != 0.0] |> length
+    
+    non_zero_risk_lines = [l for (l, _, _) in ids if ref[:branch][l]["power_risk"] != 0.0]
+    num_non_zero_risk_lines = non_zero_risk_lines |> length
+    println("non-zero risk lines: $non_zero_risk_lines" )
     println("num non-zero risk lines: $num_non_zero_risk_lines")
     total_risk = [ref[:branch][l]["power_risk"] for (l, _, _) in ids] |> sum 
     for (_, branch) in ref[:branch]

@@ -123,12 +123,12 @@ function create_preventive_model(ref; budget::Int = 5,
         var[:ramp_g_plus_scenario] = @recourse(sp, 
             ramp_g_plus_scenario[i in keys(ref[:gen])], 
             lower_bound = 0.0,
-            upper_bound = ref[:gen][i]["pmax"]
+            upper_bound = (ref[:gen][i]["cost"][1] == 0.0) ? 0.0 : ref[:gen][i]["pmax"]
         )
         var[:ramp_g_minus_scenario] = @recourse(sp, 
             ramp_g_minus_scenario[i in keys(ref[:gen])], 
             lower_bound = 0.0,
-            upper_bound = ref[:gen][i]["pmax"]
+            upper_bound = (ref[:gen][i]["cost"][1] == 0.0) ? 0.0 : ref[:gen][i]["pmax"]
         )
         var[:load_scenario] = @recourse(sp, 
             load_scenario[i in keys(ref[:load])], 
@@ -167,8 +167,8 @@ function create_preventive_model(ref; budget::Int = 5,
 
         for (i, gen) in ref[:gen]
             @constraint(sp, ramp_g_scenario[i] == ramp_g_plus_scenario[i] - ramp_g_minus_scenario[i])
-            @constraint(sp, pg[i] - ramp_g_minus_scenario[i] >= 0.0)
-            @constraint(sp, pg[i] + ramp_g_plus_scenario[i] <= gen["pmax"])
+            @constraint(sp, pg[i] + ramp_g_scenario[i] >= 0.0)
+            @constraint(sp, pg[i] + ramp_g_scenario[i] <= gen["pmax"])
         end     
 
         for (i, _) in ref[:bus]
