@@ -1,0 +1,7 @@
+{
+  "num_scenarios": 200,
+  "termination_status": "OPTIMAL",
+  "num_iterations": 11,
+  "objective_value": 2461.3228,
+  "solve_time": 3060.79
+}
